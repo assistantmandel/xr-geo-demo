@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, shallowRef, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, shallowRef, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { TresCanvas } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
-import type { WebGLRenderer, Mesh } from 'three'
+import type { WebGLRenderer, Mesh, Camera } from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { useWebXR } from '../composables/useWebXR'
 
 /**
@@ -15,6 +15,9 @@ import { useWebXR } from '../composables/useWebXR'
 
 const rendererRef = shallowRef<WebGLRenderer | null>(null)
 const { isSupported, isSessionActive, startSession, endSession } = useWebXR()
+
+// OrbitControls instance - manually created to avoid context issues
+let controls: OrbitControls | null = null
 
 // Placed objects - start with default positions
 const placedObjects = reactive<Array<{
@@ -41,17 +44,22 @@ const animate = () => {
   const delta = 0.016 // ~60fps
   time.value += delta
   
-  // Animate objects with gentle floating motion
-  if (cubeRef.value) {
+  // Animate objects with gentle floating motion (with null checks)
+  if (cubeRef.value?.rotation && cubeRef.value?.position) {
     cubeRef.value.rotation.y += delta * 0.5
     cubeRef.value.position.y = 0.1 + Math.sin(time.value * 2) * 0.02
   }
-  if (sphereRef.value) {
+  if (sphereRef.value?.position) {
     sphereRef.value.position.y = 0.1 + Math.sin(time.value * 2 + 1) * 0.02
   }
-  if (coneRef.value) {
+  if (coneRef.value?.rotation && coneRef.value?.position) {
     coneRef.value.rotation.y -= delta * 0.3
     coneRef.value.position.y = 0.1 + Math.sin(time.value * 2 + 2) * 0.02
+  }
+  
+  // Update OrbitControls damping
+  if (controls && !isSessionActive.value) {
+    controls.update()
   }
   
   animationId = requestAnimationFrame(animate)
@@ -65,6 +73,9 @@ onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
+  if (controls) {
+    controls.dispose()
+  }
 })
 
 // Called when TresCanvas is ready
@@ -75,7 +86,24 @@ const onCanvasReady = (context: any) => {
   } else if (context?.renderer) {
     rendererRef.value = context.renderer
   }
+  
+  // Setup OrbitControls manually after canvas is ready
+  if (context?.camera && rendererRef.value) {
+    const camera = context.camera.value || context.camera
+    controls = new OrbitControls(camera as Camera, rendererRef.value.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.05
+    controls.maxPolarAngle = Math.PI / 2
+    controls.enabled = !isSessionActive.value
+  }
 }
+
+// Watch for AR session changes to enable/disable controls
+watch(isSessionActive, (isActive) => {
+  if (controls) {
+    controls.enabled = !isActive
+  }
+})
 
 // Start AR when button clicked
 const handleStartAR = async () => {
@@ -217,14 +245,6 @@ const resetObjects = () => {
 
       <!-- Grid helper (visible in non-AR mode) -->
       <TresGridHelper v-if="!isSessionActive" :args="[10, 20, '#444', '#333']" />
-      
-      <!-- Orbit controls for non-AR preview -->
-      <OrbitControls 
-        v-if="!isSessionActive" 
-        :enable-damping="true"
-        :damping-factor="0.05"
-        :max-polar-angle="Math.PI / 2"
-      />
     </TresCanvas>
 
     <!-- Status indicator -->
