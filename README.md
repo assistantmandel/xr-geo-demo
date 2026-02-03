@@ -19,6 +19,23 @@ A simple WebXR Augmented Reality demo built with Vue 3 and TresJS.
 
 ## Getting Started
 
+### GitHub Dev Container (Recommended for Quick Setup)
+
+Open this project in a GitHub Codespace or VS Code Dev Container to get started instantly:
+
+1. Click the "Code" button on GitHub → "Codespaces" → "Create codespace on main"
+2. Wait for the container to build and install dependencies
+3. Run `npm run dev` in the integrated terminal
+4. The dev server will start on port 5173 (automatically forwarded)
+
+The Dev Container includes:
+- Node.js 20
+- All required VS Code extensions (Vue, ESLint, Prettier)
+- Git and GitHub CLI
+- Auto-install of npm dependencies
+
+### Local Development
+
 ```bash
 # Install dependencies
 pnpm install
