@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import * as THREE from 'three'
+import type { WebGLRenderer } from 'three'
 import { useWebXR } from '../composables/useWebXR'
 
 /**
@@ -11,7 +11,7 @@ import { useWebXR } from '../composables/useWebXR'
  * Objects are placed ~1 meter from the origin
  */
 
-const canvasRef = ref<InstanceType<typeof TresCanvas> | null>(null)
+const rendererRef = shallowRef<WebGLRenderer | null>(null)
 const { isSupported, isSessionActive, startSession, endSession } = useWebXR()
 
 // Object positions (1 meter forward, spread horizontally)
@@ -21,15 +21,27 @@ const positions = {
   cone: [0.5, 0, -1] as [number, number, number],      // Right
 }
 
+// Called when TresCanvas is ready
+// TresContext wraps the renderer in a complex object structure
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const onCanvasReady = (context: any) => {
+  // Access the internal WebGLRenderer instance
+  // TresJS wraps it - need to access the actual renderer
+  if (context?.renderer?.instance) {
+    rendererRef.value = context.renderer.instance
+  } else if (context?.renderer) {
+    // Try direct access as fallback
+    rendererRef.value = context.renderer
+  }
+}
+
 // Start AR when button clicked
 const handleStartAR = async () => {
-  if (!canvasRef.value) return
-  
-  // Access the Three.js renderer from TresCanvas
-  const renderer = canvasRef.value.context?.renderer?.value
-  if (renderer) {
-    await startSession(renderer)
+  if (!rendererRef.value) {
+    console.warn('Renderer not ready')
+    return
   }
+  await startSession(rendererRef.value)
 }
 
 // Stop AR session
@@ -66,10 +78,10 @@ const handleStopAR = () => {
 
     <!-- TresJS Canvas with 3D Scene -->
     <TresCanvas
-      ref="canvasRef"
       :alpha="true"
       :antialias="true"
       class="tres-canvas"
+      @ready="onCanvasReady"
     >
       <!-- Camera -->
       <TresPerspectiveCamera :position="[0, 1.6, 3]" />

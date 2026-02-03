@@ -17,8 +17,7 @@ export default defineConfig({
   
   server: {
     // WebXR requires HTTPS (except localhost)
-    // For local dev, use: vite --host --https
-    https: false, // Set to true and provide cert for mobile testing
+    // For mobile testing with HTTPS, use: vite --host --https
     host: true,   // Expose to network for mobile device testing
     port: 5173,
   },
