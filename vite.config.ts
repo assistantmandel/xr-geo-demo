@@ -7,8 +7,9 @@ export default defineConfig({
     vue({
       template: {
         compilerOptions: {
-          // TresJS components should be treated as custom elements
-          isCustomElement: (tag) => tag.startsWith('Tres')
+          // Suppress warnings for TresJS components
+          // They are provided globally by TresCanvas
+          isCustomElement: (tag) => tag.toLowerCase().startsWith('tres')
         }
       }
     })
