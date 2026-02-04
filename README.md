@@ -25,7 +25,7 @@ Open this project in a GitHub Codespace or VS Code Dev Container to get started 
 
 1. Click the "Code" button on GitHub → "Codespaces" → "Create codespace"
 2. Wait for the container to build and install dependencies
-3. Run `npm run dev` in the integrated terminal
+3. Run `pnpm run dev` in the integrated terminal
 4. The dev server will start on port 5173 (automatically forwarded)
 
 The Dev Container includes:
