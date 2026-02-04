@@ -3,7 +3,16 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // TresJS components should be treated as custom elements
+          isCustomElement: (tag) => tag.startsWith('Tres')
+        }
+      }
+    })
+  ],
   
   server: {
     // WebXR requires HTTPS (except localhost)

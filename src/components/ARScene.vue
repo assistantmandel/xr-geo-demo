@@ -87,14 +87,23 @@ const onCanvasReady = (context: any) => {
     rendererRef.value = context.renderer
   }
   
-  // Setup OrbitControls manually after canvas is ready
+  // Setup OrbitControls after a small delay to ensure camera is ready
   if (context?.camera && rendererRef.value) {
-    const camera = context.camera.value || context.camera
-    controls = new OrbitControls(camera as Camera, rendererRef.value.domElement)
-    controls.enableDamping = true
-    controls.dampingFactor = 0.05
-    controls.maxPolarAngle = Math.PI / 2
-    controls.enabled = !isSessionActive.value
+    // Use nextTick or setTimeout to ensure the camera is fully initialized
+    setTimeout(() => {
+      try {
+        const camera = context.camera.value || context.camera
+        if (camera && rendererRef.value) {
+          controls = new OrbitControls(camera as Camera, rendererRef.value.domElement)
+          controls.enableDamping = true
+          controls.dampingFactor = 0.05
+          controls.maxPolarAngle = Math.PI / 2
+          controls.enabled = !isSessionActive.value
+        }
+      } catch (error) {
+        console.warn('Failed to initialize OrbitControls:', error)
+      }
+    }, 100)
   }
 }
 
@@ -141,11 +150,11 @@ const addObject = () => {
 
 // Reset to default objects
 const resetObjects = () => {
-  placedObjects.length = 0
-  placedObjects.push(
+  // Clear the array and reset to defaults
+  placedObjects.splice(0, placedObjects.length,
     { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: 1 },
     { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: 2 },
-    { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: 3 },
+    { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: 3 }
   )
 }
 </script>
