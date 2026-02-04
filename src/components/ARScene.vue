@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, shallowRef, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { WebGLRenderer, Mesh, Camera } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -87,10 +87,10 @@ const onCanvasReady = (context: any) => {
     rendererRef.value = context.renderer
   }
   
-  // Setup OrbitControls after a small delay to ensure camera is ready
+  // Setup OrbitControls after canvas and camera are ready
   if (context?.camera && rendererRef.value) {
-    // Use nextTick or setTimeout to ensure the camera is fully initialized
-    setTimeout(() => {
+    // Use nextTick to ensure the camera is fully initialized in the Vue render cycle
+    nextTick(() => {
       try {
         const camera = context.camera.value || context.camera
         if (camera && rendererRef.value) {
@@ -103,7 +103,7 @@ const onCanvasReady = (context: any) => {
       } catch (error) {
         console.warn('Failed to initialize OrbitControls:', error)
       }
-    }, 100)
+    })
   }
 }
 
