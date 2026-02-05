@@ -19,6 +19,12 @@ const { isSupported, isSessionActive, startSession, endSession } = useWebXR()
 // OrbitControls instance - manually created to avoid context issues
 let controls: OrbitControls | null = null
 
+// Camera initialization delay - TresJS needs time to fully initialize the camera
+const CAMERA_INIT_DELAY = 300
+
+// Object ID counter for unique IDs
+let nextObjectId = 1
+
 // Placed objects - start with default positions
 const placedObjects = reactive<Array<{
   type: 'cube' | 'sphere' | 'cone'
@@ -26,9 +32,9 @@ const placedObjects = reactive<Array<{
   color: string
   id: number
 }>>([
-  { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: Date.now() },
-  { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: Date.now() + 1 },
-  { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: Date.now() + 2 },
+  { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: nextObjectId++ },
+  { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: nextObjectId++ },
+  { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: nextObjectId++ },
 ])
 
 // Animation state
@@ -89,7 +95,7 @@ const onCanvasReady = (context: any) => {
   
   // Setup OrbitControls after canvas and camera are ready
   if (rendererRef.value) {
-    // Wait longer to ensure the camera is fully initialized
+    // Wait for camera to be fully initialized
     setTimeout(() => {
       try {
         const renderer = rendererRef.value
@@ -119,7 +125,7 @@ const onCanvasReady = (context: any) => {
       } catch (error) {
         console.warn('Failed to initialize OrbitControls:', error)
       }
-    }, 300)
+    }, CAMERA_INIT_DELAY)
   }
 }
 
@@ -160,7 +166,7 @@ const addObject = () => {
       -1 - Math.random()
     ],
     color: colors[colorIndex] ?? '#f59e0b',
-    id: Date.now(),
+    id: nextObjectId++,
   })
 }
 
@@ -171,9 +177,9 @@ const resetObjects = () => {
   // Then add defaults in next tick to trigger re-render
   nextTick(() => {
     placedObjects.push(
-      { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: Date.now() },
-      { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: Date.now() + 1 },
-      { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: Date.now() + 2 }
+      { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: nextObjectId++ },
+      { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: nextObjectId++ },
+      { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: nextObjectId++ }
     )
   })
 }
