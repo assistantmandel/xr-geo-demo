@@ -2,6 +2,8 @@
 
 A simple WebXR Augmented Reality demo built with Vue 3 and TresJS.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/assistantmandel/xr-geo-demo?quickstart=1)
+
 ## Features
 
 - 🥽 WebXR AR session with camera passthrough

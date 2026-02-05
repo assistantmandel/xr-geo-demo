@@ -26,9 +26,9 @@ const placedObjects = reactive<Array<{
   color: string
   id: number
 }>>([
-  { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: 1 },
-  { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: 2 },
-  { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: 3 },
+  { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: Date.now() },
+  { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: Date.now() + 1 },
+  { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: Date.now() + 2 },
 ])
 
 // Animation state
@@ -88,22 +88,38 @@ const onCanvasReady = (context: any) => {
   }
   
   // Setup OrbitControls after canvas and camera are ready
-  if (context?.camera && rendererRef.value) {
-    // Use nextTick to ensure the camera is fully initialized in the Vue render cycle
-    nextTick(() => {
+  if (rendererRef.value) {
+    // Wait longer to ensure the camera is fully initialized
+    setTimeout(() => {
       try {
-        const camera = context.camera.value || context.camera
-        if (camera && rendererRef.value) {
-          controls = new OrbitControls(camera as Camera, rendererRef.value.domElement)
+        const renderer = rendererRef.value
+        
+        // Try to get the camera from different possible locations
+        let threeCamera = null
+        
+        // Try accessing through the cameras object if it exists
+        if (context?.cameras?.length > 0) {
+          threeCamera = context.cameras[0]
+        } else if (context?.camera?.value) {
+          threeCamera = context.camera.value
+        } else if (context?.camera) {
+          threeCamera = context.camera
+        }
+        
+        if (threeCamera && renderer && renderer.domElement) {
+          controls = new OrbitControls(threeCamera, renderer.domElement)
           controls.enableDamping = true
           controls.dampingFactor = 0.05
           controls.maxPolarAngle = Math.PI / 2
           controls.enabled = !isSessionActive.value
+          console.log('OrbitControls initialized successfully')
+        } else {
+          console.warn('OrbitControls not initialized - missing camera or renderer')
         }
       } catch (error) {
         console.warn('Failed to initialize OrbitControls:', error)
       }
-    })
+    }, 300)
   }
 }
 
@@ -150,12 +166,16 @@ const addObject = () => {
 
 // Reset to default objects
 const resetObjects = () => {
-  // Clear the array and reset to defaults
-  placedObjects.splice(0, placedObjects.length,
-    { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: 1 },
-    { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: 2 },
-    { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: 3 }
-  )
+  // Clear the array completely first
+  placedObjects.length = 0
+  // Then add defaults in next tick to trigger re-render
+  nextTick(() => {
+    placedObjects.push(
+      { type: 'cube', position: [-0.5, 0.1, -1], color: '#ef4444', id: Date.now() },
+      { type: 'sphere', position: [0, 0.1, -1], color: '#3b82f6', id: Date.now() + 1 },
+      { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: Date.now() + 2 }
+    )
+  })
 }
 </script>
 
