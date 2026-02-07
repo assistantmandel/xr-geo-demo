@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/xr-geo-demo/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#1a1a1a" />
+    <title>WebXR AR Demo</title>
+    
+    <!-- WebXR Polyfill for broader compatibility -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
+    <script>
+      // Initialize polyfill if native WebXR not available
+      if (!navigator.xr) {
+        new WebXRPolyfill();
+      }
+    </script>
+    <script type="module" crossorigin src="/xr-geo-demo/assets/index-BNIs75cn.js"></script>
+    <link rel="stylesheet" crossorigin href="/xr-geo-demo/assets/index-DSN40Rmp.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
