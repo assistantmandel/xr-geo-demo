@@ -1,26 +1,18 @@
 <script setup lang="ts">
-import { ref, shallowRef, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { shallowRef, reactive, nextTick } from 'vue'
 import { TresCanvas } from '@tresjs/core'
-import type { WebGLRenderer, Mesh, Camera } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { OrbitControls } from '@tresjs/cientos'
+import type { WebGLRenderer } from 'three'
 import { useWebXR } from '../composables/useWebXR'
+import AnimationController from './AnimationController.vue'
 
 /**
  * AR Scene Component
- * Enhanced version with:
- * - Animated geometric objects
- * - Tap to place functionality (when hit-test available)
- * - Better UI feedback
+ * Using TresJS's OrbitControls from cientos for proper integration
  */
 
 const rendererRef = shallowRef<WebGLRenderer | null>(null)
 const { isSupported, isSessionActive, startSession, endSession } = useWebXR()
-
-// OrbitControls instance - manually created to avoid context issues
-let controls: OrbitControls | null = null
-
-// Camera initialization delay - TresJS needs time to fully initialize the camera
-const CAMERA_INIT_DELAY = 300
 
 // Object ID counter for unique IDs
 let nextObjectId = 1
@@ -37,53 +29,6 @@ const placedObjects = reactive<Array<{
   { type: 'cone', position: [0.5, 0.1, -1], color: '#22c55e', id: nextObjectId++ },
 ])
 
-// Animation state
-const time = ref(0)
-const cubeRef = shallowRef<Mesh | null>(null)
-const sphereRef = shallowRef<Mesh | null>(null)
-const coneRef = shallowRef<Mesh | null>(null)
-
-// Animation loop
-let animationId: number | null = null
-
-const animate = () => {
-  const delta = 0.016 // ~60fps
-  time.value += delta
-  
-  // Animate objects with gentle floating motion (with null checks)
-  if (cubeRef.value?.rotation && cubeRef.value?.position) {
-    cubeRef.value.rotation.y += delta * 0.5
-    cubeRef.value.position.y = 0.1 + Math.sin(time.value * 2) * 0.02
-  }
-  if (sphereRef.value?.position) {
-    sphereRef.value.position.y = 0.1 + Math.sin(time.value * 2 + 1) * 0.02
-  }
-  if (coneRef.value?.rotation && coneRef.value?.position) {
-    coneRef.value.rotation.y -= delta * 0.3
-    coneRef.value.position.y = 0.1 + Math.sin(time.value * 2 + 2) * 0.02
-  }
-  
-  // Update OrbitControls damping
-  if (controls && !isSessionActive.value) {
-    controls.update()
-  }
-  
-  animationId = requestAnimationFrame(animate)
-}
-
-onMounted(() => {
-  animate()
-})
-
-onUnmounted(() => {
-  if (animationId) {
-    cancelAnimationFrame(animationId)
-  }
-  if (controls) {
-    controls.dispose()
-  }
-})
-
 // Called when TresCanvas is ready
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onCanvasReady = (context: any) => {
@@ -92,49 +37,7 @@ const onCanvasReady = (context: any) => {
   } else if (context?.renderer) {
     rendererRef.value = context.renderer
   }
-  
-  // Setup OrbitControls after canvas and camera are ready
-  if (rendererRef.value) {
-    // Wait for camera to be fully initialized
-    setTimeout(() => {
-      try {
-        const renderer = rendererRef.value
-        
-        // Try to get the camera from different possible locations
-        let threeCamera = null
-        
-        // Try accessing through the cameras object if it exists
-        if (context?.cameras?.length > 0) {
-          threeCamera = context.cameras[0]
-        } else if (context?.camera?.value) {
-          threeCamera = context.camera.value
-        } else if (context?.camera) {
-          threeCamera = context.camera
-        }
-        
-        if (threeCamera && renderer && renderer.domElement) {
-          controls = new OrbitControls(threeCamera, renderer.domElement)
-          controls.enableDamping = true
-          controls.dampingFactor = 0.05
-          controls.maxPolarAngle = Math.PI / 2
-          controls.enabled = !isSessionActive.value
-          console.log('OrbitControls initialized successfully')
-        } else {
-          console.warn('OrbitControls not initialized - missing camera or renderer')
-        }
-      } catch (error) {
-        console.warn('Failed to initialize OrbitControls:', error)
-      }
-    }, CAMERA_INIT_DELAY)
-  }
 }
-
-// Watch for AR session changes to enable/disable controls
-watch(isSessionActive, (isActive) => {
-  if (controls) {
-    controls.enabled = !isActive
-  }
-})
 
 // Start AR when button clicked
 const handleStartAR = async () => {
@@ -231,6 +134,18 @@ const resetObjects = () => {
       <!-- Camera -->
       <TresPerspectiveCamera :position="[0, 1.6, 3]" />
       
+      <!-- OrbitControls from cientos - placed inside TresCanvas -->
+      <OrbitControls 
+        v-if="!isSessionActive"
+        :enable-damping="true"
+        :damping-factor="0.05"
+        :max-polar-angle="Math.PI / 2"
+        make-default
+      />
+
+      <!-- Animation component - uses useLoop inside TresCanvas context -->
+      <AnimationController />
+      
       <!-- Lights -->
       <TresAmbientLight :intensity="0.6" />
       <TresDirectionalLight :position="[5, 5, 5]" :intensity="1" :cast-shadow="true" />
@@ -241,7 +156,6 @@ const resetObjects = () => {
         <!-- Cube -->
         <TresMesh 
           v-if="obj.type === 'cube'" 
-          :ref="obj.id === 1 ? (el) => cubeRef = el as any : undefined"
           :position="obj.position"
           :cast-shadow="true"
         >
@@ -252,7 +166,6 @@ const resetObjects = () => {
         <!-- Sphere -->
         <TresMesh 
           v-if="obj.type === 'sphere'" 
-          :ref="obj.id === 2 ? (el) => sphereRef = el as any : undefined"
           :position="obj.position"
           :cast-shadow="true"
         >
@@ -263,7 +176,6 @@ const resetObjects = () => {
         <!-- Cone -->
         <TresMesh 
           v-if="obj.type === 'cone'" 
-          :ref="obj.id === 3 ? (el) => coneRef = el as any : undefined"
           :position="obj.position"
           :cast-shadow="true"
         >
