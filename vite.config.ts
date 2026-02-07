@@ -3,6 +3,9 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Base path for GitHub Pages deployment
+  base: '/xr-geo-demo/',
+  
   plugins: [
     vue({
       // Enable Vue custom elements/web components
